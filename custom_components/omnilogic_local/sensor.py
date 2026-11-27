@@ -42,19 +42,11 @@ FILTER_SENSORS: tuple[OmniLogicSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
         native_unit_of_measurement=UnitOfPower.WATT,
+        # The pump keeps running in Cool Down Mode and the Waiting states, so report its power there
+        # too. Off and Suspended stay 0: when bodies of water share one pump, every body's filter
+        # reports that pump's power, including the suspended one.
         value_fn=lambda equipment: (
-            equipment.power
-            if isinstance(equipment, Filter)
-            and equipment.state
-            in [
-                FilterState.ON,
-                FilterState.PRIMING,
-                FilterState.HEATER_EXTEND,
-                FilterState.CSAD_EXTEND,
-                FilterState.FORCE_PRIMING,
-                FilterState.SUPERCHLORINATE,
-            ]
-            else 0
+            equipment.power if isinstance(equipment, Filter) and equipment.state not in (FilterState.OFF, FilterState.SUSPENDED) else 0
         ),
     ),
 )
